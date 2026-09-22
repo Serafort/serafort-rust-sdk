@@ -50,7 +50,11 @@ impl SerafortConfig {
         }
     }
 
-    pub fn with_client_credentials(mut self, client_id: impl Into<String>, client_secret: impl Into<String>) -> Self {
+    pub fn with_client_credentials(
+        mut self,
+        client_id: impl Into<String>,
+        client_secret: impl Into<String>,
+    ) -> Self {
         self.client_id = Some(client_id.into());
         self.client_secret = Some(client_secret.into());
         self
