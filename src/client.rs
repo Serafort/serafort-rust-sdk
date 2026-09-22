@@ -24,7 +24,10 @@ impl SerafortClient {
         }
     }
 
-    pub async fn get_access_token(&self, scopes: Option<Vec<String>>) -> Result<String, SerafortError> {
+    pub async fn get_access_token(
+        &self,
+        scopes: Option<Vec<String>>,
+    ) -> Result<String, SerafortError> {
         self.m2m.get_access_token(scopes).await
     }
 

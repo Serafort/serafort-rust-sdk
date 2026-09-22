@@ -1,0 +1,20 @@
+#!/bin/sh
+# Portable pre-commit hook for the Serafort Rust SDK.
+#
+# This is a pure-Cargo crate with no npm/Node.js involved, so Husky (an
+# npm-ecosystem tool) does not apply here. This plain POSIX shell script,
+# wired in via `git config core.hooksPath .githooks`, is the idiomatic
+# dependency-free equivalent for a Rust crate.
+#
+# Enable it once per clone with:
+#   git config core.hooksPath .githooks
+
+set -e
+
+echo "[pre-commit] Checking cargo fmt..."
+cargo fmt --all -- --check
+
+echo "[pre-commit] Running cargo clippy..."
+cargo clippy --all-targets -- -D warnings
+
+echo "[pre-commit] All checks passed."

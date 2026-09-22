@@ -1,6 +1,6 @@
+use serde_json::Value;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde_json::Value;
 
 use crate::errors::SerafortError;
 use crate::types::{SerafortConfig, UserContext};
@@ -17,14 +17,18 @@ impl B2BModule {
     pub fn validate_token(&self, token: &str) -> Result<UserContext, SerafortError> {
         let parts: Vec<&str> = token.split('.').collect();
         if parts.len() != 3 {
-            return Err(SerafortError::Authentication("Invalid JWT: expected 3 parts".to_string()));
+            return Err(SerafortError::Authentication(
+                "Invalid JWT: expected 3 parts".to_string(),
+            ));
         }
 
-        let payload_raw = decode_base64_url(parts[1])
-            .map_err(|e| SerafortError::Authentication(format!("Failed to base64url decode payload: {}", e)))?;
+        let payload_raw = decode_base64_url(parts[1]).map_err(|e| {
+            SerafortError::Authentication(format!("Failed to base64url decode payload: {}", e))
+        })?;
 
-        let claims: Value = serde_json::from_slice(&payload_raw)
-            .map_err(|e| SerafortError::Authentication(format!("Failed to parse JWT claims: {}", e)))?;
+        let claims: Value = serde_json::from_slice(&payload_raw).map_err(|e| {
+            SerafortError::Authentication(format!("Failed to parse JWT claims: {}", e))
+        })?;
 
         // Expiration check
         let now = SystemTime::now()
@@ -35,7 +39,9 @@ impl B2BModule {
         if let Some(exp) = claims.get("exp").and_then(|v| v.as_u64()) {
             if now > exp + 60 {
                 // 60s tolerance
-                return Err(SerafortError::Authentication("Token has expired".to_string()));
+                return Err(SerafortError::Authentication(
+                    "Token has expired".to_string(),
+                ));
             }
         }
 
@@ -102,7 +108,10 @@ impl B2BModule {
             .unwrap_or("")
             .to_string();
 
-        let email = claims.get("email").and_then(|v| v.as_str()).map(String::from);
+        let email = claims
+            .get("email")
+            .and_then(|v| v.as_str())
+            .map(String::from);
 
         let mut roles = Vec::new();
         if let Some(r_arr) = claims.get("roles").and_then(|v| v.as_array()) {
@@ -141,7 +150,7 @@ impl B2BModule {
 
 fn decode_base64_url(input: &str) -> Result<Vec<u8>, String> {
     let mut base64_str = input.replace('-', "+").replace('_', "/");
-    while base64_str.len() % 4 != 0 {
+    while !base64_str.len().is_multiple_of(4) {
         base64_str.push('=');
     }
 
@@ -183,7 +192,9 @@ fn urlencoding(input: &str) -> String {
     let mut encoded = String::new();
     for b in input.bytes() {
         match b {
-            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => encoded.push(b as char),
+            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(b as char)
+            }
             _ => encoded.push_str(&format!("%{:02X}", b)),
         }
     }

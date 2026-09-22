@@ -40,3 +40,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+## Contributing
+
+### Requirements
+
+- Rust 1.74+ (stable toolchain)
+- `rustfmt` and `clippy` components (`rustup component add rustfmt clippy`)
+
+### Git hooks
+
+This repo ships a portable pre-commit hook under `.githooks/pre-commit` that runs `cargo fmt --all -- --check` and `cargo clippy --all-targets -- -D warnings` before every commit. It is **not** installed automatically — enable it once per clone with:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+There is no Husky setup here: Husky is an npm-ecosystem tool that hooks into `package.json`/`node_modules`, and this is a pure Cargo crate with no Node.js tooling involved. A plain POSIX shell script wired through `core.hooksPath` is the idiomatic equivalent for a Rust crate and keeps it dependency-free.
+
+### CI
+
+Every push and pull request against `main` runs `cargo build`, `cargo test`, `cargo fmt --check`, and `cargo clippy -- -D warnings` via GitHub Actions (`.github/workflows/ci.yml`).

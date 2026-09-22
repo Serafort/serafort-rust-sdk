@@ -37,7 +37,13 @@ impl TokenCache {
         None
     }
 
-    pub async fn set(&self, key: String, token: String, expires_in_seconds: u64, scope: Option<String>) {
+    pub async fn set(
+        &self,
+        key: String,
+        token: String,
+        expires_in_seconds: u64,
+        scope: Option<String>,
+    ) {
         let mut lock = self.tokens.write().await;
         let expires_at = Instant::now() + Duration::from_secs(expires_in_seconds);
         lock.insert(
@@ -80,15 +86,25 @@ impl M2MModule {
         }
     }
 
-    pub async fn get_access_token(&self, scopes: Option<Vec<String>>) -> Result<String, SerafortError> {
+    pub async fn get_access_token(
+        &self,
+        scopes: Option<Vec<String>>,
+    ) -> Result<String, SerafortError> {
         self.get_token(scopes, false).await
     }
 
-    pub async fn force_refresh_token(&self, scopes: Option<Vec<String>>) -> Result<String, SerafortError> {
+    pub async fn force_refresh_token(
+        &self,
+        scopes: Option<Vec<String>>,
+    ) -> Result<String, SerafortError> {
         self.get_token(scopes, true).await
     }
 
-    async fn get_token(&self, scopes: Option<Vec<String>>, force: bool) -> Result<String, SerafortError> {
+    async fn get_token(
+        &self,
+        scopes: Option<Vec<String>>,
+        force: bool,
+    ) -> Result<String, SerafortError> {
         let mut sorted_scopes = scopes.clone().unwrap_or_default();
         sorted_scopes.sort();
         let scope_str = sorted_scopes.join(" ");
@@ -104,20 +120,32 @@ impl M2MModule {
             }
         }
 
-        self.fetch_token_with_retry(&cache_key, if scope_str.is_empty() { None } else { Some(&scope_str) }).await
+        self.fetch_token_with_retry(
+            &cache_key,
+            if scope_str.is_empty() {
+                None
+            } else {
+                Some(&scope_str)
+            },
+        )
+        .await
     }
 
-    async fn fetch_token_with_retry(&self, cache_key: &str, scope: Option<&str>) -> Result<String, SerafortError> {
-        let client_id = self
-            .config
-            .client_id
-            .as_deref()
-            .ok_or_else(|| SerafortError::Authentication("client_id is required for M2M authentication".to_string()))?;
-        let client_secret = self
-            .config
-            .client_secret
-            .as_deref()
-            .ok_or_else(|| SerafortError::Authentication("client_secret is required for M2M authentication".to_string()))?;
+    async fn fetch_token_with_retry(
+        &self,
+        cache_key: &str,
+        scope: Option<&str>,
+    ) -> Result<String, SerafortError> {
+        let client_id = self.config.client_id.as_deref().ok_or_else(|| {
+            SerafortError::Authentication(
+                "client_id is required for M2M authentication".to_string(),
+            )
+        })?;
+        let client_secret = self.config.client_secret.as_deref().ok_or_else(|| {
+            SerafortError::Authentication(
+                "client_secret is required for M2M authentication".to_string(),
+            )
+        })?;
 
         let token_url = format!("{}/oauth/token", self.config.endpoint.trim_end_matches('/'));
 
@@ -159,14 +187,18 @@ impl M2MModule {
                         )));
                     }
 
-                    let oauth: OAuthResponse = response
-                        .json()
-                        .await
-                        .map_err(|e| SerafortError::Internal(format!("Failed to parse token response: {}", e)))?;
+                    let oauth: OAuthResponse = response.json().await.map_err(|e| {
+                        SerafortError::Internal(format!("Failed to parse token response: {}", e))
+                    })?;
 
                     let exp = oauth.expires_in.unwrap_or(3600);
                     self.cache
-                        .set(cache_key.to_string(), oauth.access_token.clone(), exp, scope.map(String::from))
+                        .set(
+                            cache_key.to_string(),
+                            oauth.access_token.clone(),
+                            exp,
+                            scope.map(String::from),
+                        )
                         .await;
 
                     return Ok(oauth.access_token);
@@ -190,11 +222,15 @@ mod tests {
         let cache = TokenCache::new(Duration::from_secs(300)); // 5 min buffer
 
         // Token valid for 10 minutes -> Hit
-        cache.set("key_1".to_string(), "tok_valid".to_string(), 600, None).await;
+        cache
+            .set("key_1".to_string(), "tok_valid".to_string(), 600, None)
+            .await;
         assert_eq!(cache.get("key_1").await, Some("tok_valid".to_string()));
 
         // Token valid for 2 minutes (< 5 min buffer) -> Proactively invalid / Miss
-        cache.set("key_2".to_string(), "tok_expiring".to_string(), 120, None).await;
+        cache
+            .set("key_2".to_string(), "tok_expiring".to_string(), 120, None)
+            .await;
         assert_eq!(cache.get("key_2").await, None);
     }
 }
