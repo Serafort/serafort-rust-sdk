@@ -1,0 +1,15 @@
+# Build artifacts
+/target/
+
+# This is a library crate — consumers pin their own dependency versions,
+# so the lockfile is not committed (standard convention for Rust libs).
+Cargo.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editor folders
+.idea/
+.vscode/
+*.iml

@@ -1,0 +1,12 @@
+[package]
+name = "serafort_sdk"
+version = "0.1.0"
+edition = "2021"
+description = "Serafort B2B and Machine Identity SDK"
+
+[dependencies]
+tokio = { version = "1.32", features = ["full"] }
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
